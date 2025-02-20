@@ -1,0 +1,8 @@
+.venv/
+__pycache__/
+.DS_Store
+.pytest_cache/
+*.log
+*.sqlite3
+dbt_modules/
+target/
