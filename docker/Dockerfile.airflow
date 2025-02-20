@@ -1,0 +1,25 @@
+FROM apache/airflow:2.5.3-python3.10
+
+# Set environment variables for Airflow
+ENV AIRFLOW_HOME=/opt/airflow
+WORKDIR $AIRFLOW_HOME
+
+# Install required system dependencies
+RUN apt-get update && apt-get install -y \
+  curl \
+  gcc \
+  g++ \
+  python3-dev \
+  && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies using Poetry
+COPY pyproject.toml poetry.lock ./
+RUN pip install --no-cache-dir poetry \
+  && poetry install --no-root --no-interaction --no-ansi
+
+# Copy DAGs to the container
+COPY dags/ dags/
+
+# Set the entrypoint for Airflow
+ENTRYPOINT ["/bin/bash", "-c"]
+CMD ["airflow standalone"]
