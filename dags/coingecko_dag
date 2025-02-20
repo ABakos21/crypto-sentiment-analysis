@@ -1,0 +1,64 @@
+import os
+import requests
+import json
+import logging
+from datetime import datetime
+from google.cloud import storage
+from airflow import DAG
+from airflow.operators.python import PythonOperator
+from dotenv import load_dotenv
+
+# Load API Key from .env
+load_dotenv()
+COINGECKO_API_KEY = os.getenv("coingecko")
+GCS_BUCKET = "need this setup!"
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
+def fetch_btc_price():
+    """Fetches Bitcoin closing price and logs it to Cloud Storage"""
+    url = "https://api.coingecko.com/api/v3/simple/price"
+    params = {
+        "ids": "bitcoin",
+        "vs_currencies": "usd",
+        "include_market_cap": "true",
+        "include_24hr_vol": "true",
+        "include_last_updated_at": "true"
+    }
+
+    headers = {"x-cg-api-key": COINGECKO_API_KEY}
+
+    try:
+        response = requests.get(url, params=params, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+        btc_data = data.get("bitcoin", {})
+
+        # Convert timestamp
+        btc_data["last_updated"] = datetime.utcfromtimestamp(btc_data.get("last_updated_at", 0)).strftime('%Y-%m-%d %H:%M:%S')
+
+        # Add coin name (to support multiple coins in the future)
+        btc_data["coin"] = "bitcoin"
+
+        # Log data
+        log_data = json.dumps(btc_data, indent=4)
+        logging.info(f"Fetched BTC Data: {log_data}")
+
+        # Store log in GCS
+        storage_client = storage.Client()
+        bucket = storage_client.bucket(GCS_BUCKET)
+        blob = bucket.blob(f"logs/fetch_btc_{datetime.utcnow().strftime('%Y-%m-%d_%H-%M-%S')}.json")
+        blob.upload_from_string(log_data, content_type="application/json")
+        logging.info(f"Saved log to GCS: {blob.public_url}")
+
+    except requests.exceptions.RequestException as e:
+        logging.error(f"API request failed: {e}")
+        return None
+
+# Define Airflow DAG
+default_args = {"owner": "airflow", "start_date": datetime(2025, 2, 1), "retries": 1}
+
+dag = DAG("fetch_btc_closing_price_to_gcs", default_args=default_args, schedule_interval="@daily")
+
+fetch_btc_task = PythonOperator(task_id="fetch_btc_task", python_callable=fetch_btc_price, dag=dag)
