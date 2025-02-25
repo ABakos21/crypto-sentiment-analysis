@@ -1,10 +1,11 @@
-FROM apache/airflow:2.5.3-python3.10
+# Use a lightweight Python base image instead of apache/airflow
+FROM python:3.10-slim
 
 # Set environment variables for Airflow
 ENV AIRFLOW_HOME=/opt/airflow
 WORKDIR $AIRFLOW_HOME
 
-# Install required system dependencies
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
   curl \
   gcc \
@@ -12,14 +13,30 @@ RUN apt-get update && apt-get install -y \
   python3-dev \
   && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies using Poetry
-COPY pyproject.toml poetry.lock ./
-RUN pip install --no-cache-dir poetry \
-  && poetry install --no-root --no-interaction --no-ansi
+# Install Poetry
+RUN pip install --upgrade pip && pip install poetry \
+  && poetry config virtualenvs.create false
 
-# Copy DAGs to the container
+# Copy dependency files and install Python packages
+COPY pyproject.toml poetry.lock ./
+RUN poetry install --no-root --no-interaction --no-ansi --only main
+
+# Ensure correct pendulum version before installing Airflow
+RUN pip install --force-reinstall pendulum==2.1.2
+
+# Install Apache Airflow manually
+RUN pip install apache-airflow[google]==2.9.0
+
+# Copy DAGs
 COPY dags/ dags/
 
+# Copy Google Cloud credentials
+COPY docker/airflow-gcs-key.json /opt/airflow/airflow-gcs-key.json
+RUN chmod 600 /opt/airflow/airflow-gcs-key.json
+
+# Copy the entrypoint.sh script
+COPY docker/entrypoint.sh /opt/airflow/entrypoint.sh
+RUN chmod +x /opt/airflow/entrypoint.sh
+
 # Set the entrypoint for Airflow
-ENTRYPOINT ["/bin/bash", "-c"]
-CMD ["airflow standalone"]
+ENTRYPOINT ["/opt/airflow/entrypoint.sh"]

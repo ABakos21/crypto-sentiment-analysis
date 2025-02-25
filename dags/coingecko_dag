@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 # Load API Key from .env
 load_dotenv()
 COINGECKO_API_KEY = os.getenv("coingecko")
-GCS_BUCKET = "need this setup!"
+GCS_BUCKET = "crypto-sentiment-analysis"
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -45,20 +45,13 @@ def fetch_btc_price():
         log_data = json.dumps(btc_data, indent=4)
         logging.info(f"Fetched BTC Data: {log_data}")
 
-        # Store log in GCS
+        # Store log in GCS (coingecko_bronze layer)
         storage_client = storage.Client()
         bucket = storage_client.bucket(GCS_BUCKET)
-        blob = bucket.blob(f"logs/fetch_btc_{datetime.utcnow().strftime('%Y-%m-%d_%H-%M-%S')}.json")
+        blob = bucket.blob(f"coingecko_bronze/fetch_btc_{datetime.utcnow().strftime('%Y-%m-%d_%H-%M-%S')}.json")
         blob.upload_from_string(log_data, content_type="application/json")
         logging.info(f"Saved log to GCS: {blob.public_url}")
 
     except requests.exceptions.RequestException as e:
         logging.error(f"API request failed: {e}")
         return None
-
-# Define Airflow DAG
-default_args = {"owner": "airflow", "start_date": datetime(2025, 2, 1), "retries": 1}
-
-dag = DAG("fetch_btc_closing_price_to_gcs", default_args=default_args, schedule_interval="@daily")
-
-fetch_btc_task = PythonOperator(task_id="fetch_btc_task", python_callable=fetch_btc_price, dag=dag)
