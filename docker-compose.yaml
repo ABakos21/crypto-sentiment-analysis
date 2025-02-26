@@ -50,6 +50,7 @@ services:
       - airflow_dags:/opt/airflow/dags
       - airflow_logs:/opt/airflow/logs
       - airflow_plugins:/opt/airflow/plugins
+      - ./docker/airflow-gcs-key.json:/opt/airflow/gcp-service-key.json
     networks:
       - airflow_network
 
@@ -79,6 +80,7 @@ services:
       - airflow_dags:/opt/airflow/dags
       - airflow_logs:/opt/airflow/logs
       - airflow_plugins:/opt/airflow/plugins
+      - ./docker/airflow-gcs-key.json:/opt/airflow/gcp-service-key.json
     ports:
       - "8080:8080"
     healthcheck:
