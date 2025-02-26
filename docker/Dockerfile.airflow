@@ -1,7 +1,9 @@
-# Use a lightweight Python base image instead of apache/airflow
 FROM python:3.10-slim
 
-# Set environment variables for Airflow
+# Set non-interactive mode for apt-get
+ARG DEBIAN_FRONTEND=noninteractive
+
+# Set environment variables
 ENV AIRFLOW_HOME=/opt/airflow
 WORKDIR $AIRFLOW_HOME
 
@@ -11,9 +13,10 @@ RUN apt-get update && apt-get install -y \
   gcc \
   g++ \
   python3-dev \
+  netcat-traditional \
   && rm -rf /var/lib/apt/lists/*
 
-# Install Poetry
+# Install Poetry and update pip
 RUN pip install --upgrade pip && pip install poetry \
   && poetry config virtualenvs.create false
 
@@ -24,19 +27,24 @@ RUN poetry install --no-root --no-interaction --no-ansi --only main
 # Ensure correct pendulum version before installing Airflow
 RUN pip install --force-reinstall pendulum==2.1.2
 
-# Install Apache Airflow manually
+# Install Apache Airflow manually (including PostgreSQL dependency)
 RUN pip install apache-airflow[google]==2.9.0
 
 # Copy DAGs
 COPY dags/ dags/
 
-# Copy Google Cloud credentials
+# Copy Google Cloud credentials securely
 COPY docker/airflow-gcs-key.json /opt/airflow/airflow-gcs-key.json
 RUN chmod 600 /opt/airflow/airflow-gcs-key.json
 
-# Copy the entrypoint.sh script
-COPY docker/entrypoint.sh /opt/airflow/entrypoint.sh
-RUN chmod +x /opt/airflow/entrypoint.sh
+# Copy scripts folder (more structured)
+COPY scripts/ /opt/airflow/scripts/
+RUN chmod +x /opt/airflow/scripts/entrypoint.sh
+
+# Fix: Switch to a non-root user for better security
+RUN useradd --create-home airflow && \
+  chown -R airflow:airflow /opt/airflow
+USER airflow
 
 # Set the entrypoint for Airflow
-ENTRYPOINT ["/opt/airflow/entrypoint.sh"]
+ENTRYPOINT ["/opt/airflow/scripts/entrypoint.sh"]
