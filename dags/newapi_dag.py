@@ -3,7 +3,7 @@ import requests
 import json
 import logging
 import pathlib
-from news_api_btc_raw import fetch_news_api
+#from news_api_btc_raw import fetch_news_api
 #from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from google.cloud import storage
@@ -25,8 +25,25 @@ def fetch_dag_newsapi (**kwargs):
     today_date = datetime.today()
     yesterday = today_date - timedelta(days=1)
     yesterday_format = yesterday.strftime('%Y-%m-%d')
+    keyword = "Bitcoin"
+        # NewsAPI endpoint
+    url = (  'https://newsapi.org/v2/everything?'
+       f'q={keyword}&'
+       f'from={yesterday_format}&'
+       f'apikey={NEWS_API_KEY}&'
+       'sortBy=popularity&'
+       'language=en'
+
+
+          )
+    #'to': date,    # End date (ISO format: YYYY-MM-DD)
+     #f'apikey={api_key}&'
+    # Send GET request to NewsAPI
+    response = requests.get(url)
+    articles = response.json()['articles']
+
     #print(yesterday_format)
-    news_api_json = fetch_news_api("Bitcoin", yesterday_format,NEWS_API_KEY)
+    news_api_json = articles
     log.info(f"Fetched Bitcoin New API Data for {yesterday_format }: {news_api_json}")
 
     #Store News API to GCS
