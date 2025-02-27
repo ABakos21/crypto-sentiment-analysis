@@ -47,7 +47,7 @@ services:
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
       - COINGECKO_API_KEY=${COINGECKO_API_KEY}
     volumes:
-      - airflow_dags:/opt/airflow/dags
+      - ./dags:/opt/airflow/dags
       - airflow_logs:/opt/airflow/logs
       - airflow_plugins:/opt/airflow/plugins
       - ./docker/airflow-gcs-key.json:/opt/airflow/gcp-service-key.json
@@ -77,7 +77,7 @@ services:
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
       - COINGECKO_API_KEY=${COINGECKO_API_KEY}
     volumes:
-      - airflow_dags:/opt/airflow/dags
+      - ./dags:/opt/airflow/dags
       - airflow_logs:/opt/airflow/logs
       - airflow_plugins:/opt/airflow/plugins
       - ./docker/airflow-gcs-key.json:/opt/airflow/gcp-service-key.json
