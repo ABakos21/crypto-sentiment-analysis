@@ -8,3 +8,4 @@ dbt_modules/
 target/
 .env
 airflow-gcs-key.json
+logs/
