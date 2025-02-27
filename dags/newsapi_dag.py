@@ -10,11 +10,15 @@ from google.cloud import storage
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.utils.dates import days_ago
+from dotenv import load_dotenv
 
 
 
 # Get API Key from environment variable
+#load_dotenv()
+#NEWS_API_KEY = os.getenv("NEWS_API_KEY", "default_value")
 NEWS_API_KEY  = os.getenv("NEWS_API_KEY")
+#print('outside Key',NEWS_API_KEY )
 GCS_BUCKET = "crypto-sentiment-analysis"
 
 # Configure logging
@@ -27,33 +31,43 @@ def fetch_dag_newsapi (**kwargs):
     yesterday_format = yesterday.strftime('%Y-%m-%d')
     keyword = "Bitcoin"
         # NewsAPI endpoint
-    url = (  'https://newsapi.org/v2/everything?'
+    url = ('https://newsapi.org/v2/everything?'
        f'q={keyword}&'
        f'from={yesterday_format}&'
        f'apikey={NEWS_API_KEY}&'
        'sortBy=popularity&'
        'language=en'
-
-
-          )
+        )
     #'to': date,    # End date (ISO format: YYYY-MM-DD)
      #f'apikey={api_key}&'
     # Send GET request to NewsAPI
     response = requests.get(url)
-    articles = response.json()['articles']
-
+    if response.status_code == 200:
+     print(url)
+     #articles = response.json()['articles']
+     articles = response.json()
+     print(response.status_code)
+     news_api_json = articles
+     print(articles)
+     log.info(f"Fetched Bitcoin New API Data for {yesterday_format }: {news_api_json}")
     #print(yesterday_format)
-    news_api_json = articles
-    log.info(f"Fetched Bitcoin New API Data for {yesterday_format }: {news_api_json}")
+    else:
+    #news_api_json = articles
+     print(response.status_code)
+     print(url)
+     log.info(f"Failed to fetch articles. Status code: {response.status_code}")
 
     #Store News API to GCS
     # Store log in GCS (coingecko_bronze layer)
     storage_client = storage.Client()
     bucket = storage_client.bucket(GCS_BUCKET)
+    print(bucket)
     blob_name = f"coingecko_bronze/fetch_newsapi_{yesterday_format}.json"
+    #blob_name = f"coingecko_bronze/fetch_newsapi_{yesterday_format}.txt"
     blob = bucket.blob(blob_name)
 
     try:
+            #blob.upload_from_string(news_api_json, content_type="text/plain")
             blob.upload_from_string(news_api_json, content_type="application/json")
             log.info(f"Saved log to GCS: {blob.public_url}")
     except Exception as e:
@@ -87,4 +101,4 @@ fetch_newsapi_task = PythonOperator(
 
 
 #if __name__ == "__main__":
-   #  print(fetch_dag_newsapi())
+  # fetch_dag_newsapi()
