@@ -4,7 +4,6 @@ networks:
 
 volumes:
   postgres_data:
-  airflow_dags:
   airflow_plugins:
   airflow_logs:
 
@@ -46,6 +45,8 @@ services:
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
       - COINGECKO_API_KEY=${COINGECKO_API_KEY}
+      - NEWS_API_KEY=${NEWS_API_KEY}
+      - GOOGLE_APPLICATION_CREDENTIALS=/opt/airflow/gcp-service-key.json
     volumes:
       - ./dags:/opt/airflow/dags
       - airflow_logs:/opt/airflow/logs
@@ -76,6 +77,8 @@ services:
       - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       - AIRFLOW__CORE__EXECUTOR=LocalExecutor
       - COINGECKO_API_KEY=${COINGECKO_API_KEY}
+      - NEWS_API_KEY=${NEWS_API_KEY}
+      - GOOGLE_APPLICATION_CREDENTIALS=/opt/airflow/gcp-service-key.json
     volumes:
       - ./dags:/opt/airflow/dags
       - airflow_logs:/opt/airflow/logs

@@ -2,80 +2,82 @@ import os
 import requests
 import json
 import logging
-import pathlib
-#from news_api_btc_raw import fetch_news_api
-#from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from google.cloud import storage
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.utils.dates import days_ago
 
-
-
 # Get API Key from environment variable
-NEWS_API_KEY  = os.getenv("NEWS_API_KEY")
+NEWS_API_KEY = os.getenv("NEWS_API_KEY")
 GCS_BUCKET = "crypto-sentiment-analysis"
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 log = logging.getLogger(__name__)
 
-def fetch_dag_newsapi (**kwargs):
-    today_date = datetime.today()
-    yesterday = today_date - timedelta(days=1)
-    yesterday_format = yesterday.strftime('%Y-%m-%d')
+def fetch_dag_newsapi(**kwargs):
+    execution_date = (datetime.strptime(kwargs["ds"], "%Y-%m-%d") - timedelta(days=1)).strftime("%Y-%m-%d")
+    log.info(f"Fetching news data for {execution_date}")
+
     keyword = "Bitcoin"
-        # NewsAPI endpoint
-    url = (  'https://newsapi.org/v2/everything?'
-       f'q={keyword}&'
-       f'from={yesterday_format}&'
-       f'apikey={NEWS_API_KEY}&'
-       'sortBy=popularity&'
-       'language=en'
+    url = (
+        f"https://newsapi.org/v2/everything?"
+        f"q={keyword}&"
+        f"from={execution_date}&"
+        f"to={execution_date}&"
+        f"sortBy=popularity&"
+        f"language=en"
+    )
 
+    # Set custom headers to avoid HTTP 426 error
+    headers = {
+        "User-Agent": "Mozilla/5.0",
+        "X-Api-Key": NEWS_API_KEY
+    }
 
-          )
-    #'to': date,    # End date (ISO format: YYYY-MM-DD)
-     #f'apikey={api_key}&'
-    # Send GET request to NewsAPI
-    response = requests.get(url)
-    articles = response.json()['articles']
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+        articles = response.json().get("articles", [])
 
-    #print(yesterday_format)
-    news_api_json = articles
-    log.info(f"Fetched Bitcoin New API Data for {yesterday_format }: {news_api_json}")
+        # Skip upload if no news found
+        if not articles:
+            log.warning(f"⚠️ No news articles found for {execution_date}. Skipping GCS upload.")
+            return
 
-    #Store News API to GCS
-    # Store log in GCS (coingecko_bronze layer)
+        log.info(f"✅ Successfully fetched {len(articles)} articles for {execution_date}")
+
+    except requests.exceptions.RequestException as e:
+        log.error(f"❌ API request failed: {e}")
+        return
+
+    # Store News API response to GCS
     storage_client = storage.Client()
     bucket = storage_client.bucket(GCS_BUCKET)
-    blob_name = f"coingecko_bronze/fetch_newsapi_{yesterday_format}.json"
+    blob_name = f"crypto_bronze_news/fetch_newsapi_{execution_date}.json"
     blob = bucket.blob(blob_name)
 
     try:
-            blob.upload_from_string(news_api_json, content_type="application/json")
-            log.info(f"Saved log to GCS: {blob.public_url}")
+        news_api_json_str = json.dumps(articles, indent=4)
+        blob.upload_from_string(news_api_json_str, content_type="application/json")
+        log.info(f"✅ Successfully saved news data to GCS: {blob_name}")
+
     except Exception as e:
-            log.error(f"Failed to upload data to GCS: {e}")
-
-    except requests.exceptions.RequestException as e:
-        log.error(f"API request failed: {e}")
-
-
+        log.error(f"❌ Failed to upload data to GCS: {e}")
 
 # Define DAG
 default_args = {
     "owner": "airflow",
-    "start_date": datetime(2025, 2, 1),
-    "retries": 1
+    "start_date": days_ago(30),
+    "retries": 1,
 }
 
 dag = DAG(
     "fetch_btc_newsapi_to_gcs",
     default_args=default_args,
     schedule_interval="@daily",
-    catchup=True
+    catchup=False
 )
 
 fetch_newsapi_task = PythonOperator(
@@ -84,7 +86,3 @@ fetch_newsapi_task = PythonOperator(
     provide_context=True,
     dag=dag
 )
-
-
-#if __name__ == "__main__":
-   #  print(fetch_dag_newsapi())
