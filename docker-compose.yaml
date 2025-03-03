@@ -5,7 +5,6 @@ networks:
 volumes:
   postgres_data:
   airflow_plugins:
-  airflow_logs:
 
 services:
   # PostgreSQL Database
@@ -49,7 +48,7 @@ services:
       - GOOGLE_APPLICATION_CREDENTIALS=/opt/airflow/gcp-service-key.json
     volumes:
       - ./dags:/opt/airflow/dags
-      - airflow_logs:/opt/airflow/logs
+      - ./logs:/opt/airflow/logs
       - airflow_plugins:/opt/airflow/plugins
       - ./docker/airflow-gcs-key.json:/opt/airflow/gcp-service-key.json
     networks:
@@ -81,7 +80,7 @@ services:
       - GOOGLE_APPLICATION_CREDENTIALS=/opt/airflow/gcp-service-key.json
     volumes:
       - ./dags:/opt/airflow/dags
-      - airflow_logs:/opt/airflow/logs
+      - ./logs:/opt/airflow/logs
       - airflow_plugins:/opt/airflow/plugins
       - ./docker/airflow-gcs-key.json:/opt/airflow/gcp-service-key.json
     ports:
