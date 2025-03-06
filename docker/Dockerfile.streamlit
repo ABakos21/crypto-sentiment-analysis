@@ -3,11 +3,11 @@ FROM python:3.10-slim
 WORKDIR /app
 
 # Install dependencies
-COPY pyproject.toml poetry.lock ./
-RUN pip install poetry && poetry install --no-dev
+COPY requirements.txt requirements.txt
+RUN pip install -r requirements.txt
 
-COPY . .
+COPY streamlit streamlit
 
 EXPOSE 8501
 
-CMD ["streamlit", "run", "crypto_sentiment/streamlit_app.py"]
+CMD ["streamlit", "run", "streamlit/streamlit_app.py"]
