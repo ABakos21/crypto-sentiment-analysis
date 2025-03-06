@@ -92,3 +92,24 @@ services:
       retries: 3
     networks:
       - airflow_network
+
+  # Streamlit Crypto Sentiment App
+  streamlit:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.streamlit
+    container_name: streamlit_app
+    restart: always
+    #volumes:
+      #- ./.streamlit:/app/.streamlit/
+      #- ./crypto_sentiment:/app/crypto_sentiment/
+    command: ["streamlit", "run", "streamlit/streamlit_app.py"]
+    ports:
+      - "8501:8501"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - airflow_network
+    stdin_open: true  # Interactive debugging
+    tty: true         # Keeps terminal open
