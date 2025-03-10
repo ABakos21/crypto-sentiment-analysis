@@ -14,7 +14,10 @@ RUN apt-get update && apt-get install -y \
   g++ \
   python3-dev \
   netcat-traditional \
+  git \
+  sudo \
   && rm -rf /var/lib/apt/lists/*
+
 
 # Install Poetry and update pip
 RUN pip install --upgrade pip && pip install poetry \

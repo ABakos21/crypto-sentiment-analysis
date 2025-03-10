@@ -1,0 +1,16 @@
+name: "crypto_dbt_project"
+version: "1.0"
+config-version: 2
+
+profile: "crypto_dbt"
+
+model-paths: ["models"]
+
+models:
+  crypto_dbt_project:
+    staging:
+      +schema: crypto_data_silver
+      +materialized: view
+    gold:
+      +schema: crypto_data_gold
+      +materialized: table
