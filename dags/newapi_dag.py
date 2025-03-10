@@ -21,25 +21,36 @@ def fetch_dag_newsapi(**kwargs):
     log.info(f"Fetching news data for {execution_date}")
 
     keyword = "Bitcoin"
-    url = (
-        f"https://newsapi.org/v2/everything?"
-        f"q={keyword}&"
-        f"from={execution_date}&"
-        f"to={execution_date}&"
-        f"sortBy=popularity&"
-        f"language=en"
-    )
+    #url = (
+      #  f"https://newsapi.org/v2/everything?"
+       # f"q={keyword}&"
+      #  f"from={execution_date}&"
+      #  f"to={execution_date}&"
+      #  f"sortBy=popularity&"
+      #  f"language=en"
+   # )
+
+    url = ('https://newsapi.org/v2/everything?'
+       f'q={keyword}&'
+       f'from={execution_date}&'
+       f'apikey={NEWS_API_KEY}&'
+       'sortBy=popularity&'
+       'language=en'
+        )
 
     # Set custom headers to avoid HTTP 426 error
-    headers = {
-        "User-Agent": "Mozilla/5.0",
-        "X-Api-Key": NEWS_API_KEY
-    }
+   # headers = {
+    #    "User-Agent": "Mozilla/5.0",
+     #   "X-Api-Key": NEWS_API_KEY
+   # }
 
     try:
-        response = requests.get(url, headers=headers, timeout=10)
+        response = requests.get(url, timeout=10)
         response.raise_for_status()
-        articles = response.json().get("articles", [])
+        #articles = response.json().get("articles", [])
+        #articles = response.json()['articles']
+        #08.03.2025 - change back to article full jason to adapt the Bigquery push
+        articles = response.json()
 
         # Skip upload if no news found
         if not articles:
@@ -70,14 +81,17 @@ def fetch_dag_newsapi(**kwargs):
 default_args = {
     "owner": "airflow",
     "start_date": days_ago(30),
+    #"start_date": datetime(2025, 2, 1),
     "retries": 1,
 }
 
 dag = DAG(
     "fetch_btc_newsapi_to_gcs",
     default_args=default_args,
+    #start_date=datetime(2025, 2, 1),
     schedule_interval="@daily",
-    catchup=False
+    catchup=False,
+    max_active_runs=1  # Ensures proper backfill execution
 )
 
 fetch_newsapi_task = PythonOperator(
