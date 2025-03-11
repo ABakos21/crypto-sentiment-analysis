@@ -1,0 +1,10 @@
+crypto_dbt:
+  outputs:
+    dev:
+      type: bigquery
+      method: service-account
+      project: mimetic-parity-452009-b1
+      dataset: crypto_data_gold
+      threads: 4
+      keyfile: /opt/airflow/gcp-service-key.json
+  target: dev

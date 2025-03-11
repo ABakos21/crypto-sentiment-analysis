@@ -1,0 +1,8 @@
+version: 2
+
+sources:
+  - name: crypto_data_silver
+    schema: crypto_data_silver
+    tables:
+      - name: coingecko_silver
+      - name: newsapi_silver
