@@ -10,6 +10,7 @@ import pandas as pd
 import re
 import csv
 from airflow.utils.dates import days_ago
+from textblob import TextBlob
 
 # Google Cloud Storage & BigQuery settings
 GCP_PROJECT_ID = "mimetic-parity-452009-b1"
@@ -86,6 +87,21 @@ def transform_newapi_data( **kwargs):
     # Ensure required columns are present
     df = df.dropna(subset=["publishedAt", "source_name", "title", "description", "content"])
 
+    # Combine 'title', 'description', and 'content' into a single text column
+    df["combined_text"] = df["title"] + " " + df["description"] + " " + df["content"]
+
+    # Perform sentiment analysis using TextBlob
+    df["polarity"] = df["combined_text"].apply(lambda text: TextBlob(text).sentiment.polarity)
+
+    # Categorize sentiment
+    df["sentiment"] = df["polarity"].apply(lambda p: "positive" if p > 0 else ("negative" if p < 0 else "neutral"))
+
+    # Ensure any blank or NaN sentiment is set to "neutral"
+    df["sentiment"] = df["sentiment"].fillna("neutral")
+
+    # Select only relevant columns
+    df = df[["publishedAt", "source_name", "title", "description", "content", "sentiment"]]
+
     if df.empty:
         raise AirflowSkipException(f"Skipping: No valid data to process for {formatted_ds}")
 
@@ -157,6 +173,7 @@ load_to_bigquery = GCSToBigQueryOperator(
         {"name": "title", "type": "STRING"},
         {"name": "description", "type": "STRING"},
         {"name": "content", "type": "STRING"},
+        {"name": "sentiment", "type": "STRING"},
     ],
     skip_leading_rows=1,
     create_disposition="CREATE_IF_NEEDED",
