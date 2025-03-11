@@ -5,6 +5,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 # Set environment variables
 ENV AIRFLOW_HOME=/opt/airflow
+ENV DBT_PROFILES_DIR=/opt/dbt
 WORKDIR $AIRFLOW_HOME
 
 # Install system dependencies
@@ -18,6 +19,8 @@ RUN apt-get update && apt-get install -y \
   sudo \
   && rm -rf /var/lib/apt/lists/*
 
+# Create airflow user before setting permissions
+RUN useradd --create-home airflow
 
 # Install Poetry and update pip
 RUN pip install --upgrade pip && pip install poetry \
@@ -31,22 +34,30 @@ RUN poetry install --no-root --no-interaction --no-ansi --only main
 RUN pip install --force-reinstall pendulum==2.1.2
 
 # Install Apache Airflow manually (including PostgreSQL dependency)
-RUN pip install apache-airflow[google]==2.9.0
+RUN pip install apache-airflow[google]==2.9.0 dbt-core dbt-bigquery
+
+# Create required directories with correct permissions
+RUN mkdir -p /opt/dbt /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins \
+  && chown -R airflow:airflow /opt/dbt /opt/airflow
+
+# Copy dbt configuration and models
+COPY --chown=airflow:airflow dbt/ /opt/dbt/
 
 # Copy DAGs
-COPY dags/ dags/
+COPY --chown=airflow:airflow dags/ /opt/airflow/dags/
 
 # Copy Google Cloud credentials securely
-COPY docker/airflow-gcs-key.json /opt/airflow/airflow-gcs-key.json
+COPY --chown=airflow:airflow docker/airflow-gcs-key.json /opt/airflow/airflow-gcs-key.json
 RUN chmod 600 /opt/airflow/airflow-gcs-key.json
 
-# Copy scripts folder (more structured)
-COPY scripts/ /opt/airflow/scripts/
+# Copy scripts folder
+COPY --chown=airflow:airflow scripts/ /opt/airflow/scripts/
 RUN chmod +x /opt/airflow/scripts/entrypoint.sh
 
-# Fix: Switch to a non-root user for better security
-RUN useradd --create-home airflow && \
-  chown -R airflow:airflow /opt/airflow
+# Ensure the correct working directory
+WORKDIR /opt/airflow
+
+# Switch to non-root user
 USER airflow
 
 # Set the entrypoint for Airflow

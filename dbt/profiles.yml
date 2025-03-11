@@ -1,4 +1,4 @@
-crypto_project:
+crypto_dbt:
   outputs:
     dev:
       type: bigquery

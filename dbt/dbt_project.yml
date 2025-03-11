@@ -4,7 +4,7 @@ config-version: 2
 
 profile: "crypto_dbt"
 
-model-paths: ["models"]
+model-paths: ["models/crypto_dbt_project"]
 
 models:
   crypto_dbt_project:
