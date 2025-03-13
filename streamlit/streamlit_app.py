@@ -58,12 +58,23 @@ def fetch_news_bias():
     """
     return client.query(query).to_dataframe()
 
+# Function to Fetch News Articles
+def fetch_news_articles():
+    query = f"""
+        SELECT date_id, source_id, title, description, content, sentiment
+        FROM `{PROJECT_ID}.{DATASET_ID}.fact_crypto_news_articles`
+        ORDER BY date_id DESC
+    """
+    return client.query(query).to_dataframe()
+
 # Load Data
 price_data = fetch_price_data()
 news_bias_data = fetch_news_bias()
+news_articles = fetch_news_articles()
 
-# Convert date_id to datetime
-price_data["date_id"] = pd.to_datetime(price_data["date_id"], format='%Y%m%d')
+# Convert date_id to datetime with flexible formats
+price_data["date_id"] = pd.to_datetime(price_data["date_id"], format='%Y%m%d', errors='coerce')
+news_articles["date_id"] = pd.to_datetime(news_articles["date_id"], format='%Y%m%d', errors='coerce')
 
 # Sidebar Filters
 st.sidebar.header("Filter Options")
@@ -76,11 +87,14 @@ start_date = st.sidebar.date_input("Start Date", price_data["date_id"].min())
 end_date = st.sidebar.date_input("End Date", price_data["date_id"].max())
 
 sentiment_data = fetch_sentiment_data(None if selected_source == "All" else selected_source)
-sentiment_data["date_id"] = pd.to_datetime(sentiment_data["date_id"], format='%Y%m%d')
+sentiment_data["date_id"] = pd.to_datetime(sentiment_data["date_id"], format='%Y%m%d', errors='coerce')
 
 # Filter Data by Selected Date Range
 price_data = price_data[(price_data["date_id"] >= pd.to_datetime(start_date)) & (price_data["date_id"] <= pd.to_datetime(end_date))]
 sentiment_data = sentiment_data[(sentiment_data["date_id"] >= pd.to_datetime(start_date)) & (sentiment_data["date_id"] <= pd.to_datetime(end_date))]
+news_articles = news_articles[(news_articles["date_id"] >= pd.to_datetime(start_date)) & (news_articles["date_id"] <= pd.to_datetime(end_date))]
+if selected_source != "All":
+    news_articles = news_articles[news_articles["source_id"] == selected_source]
 
 # Create Layout
 col1, col2 = st.columns(2)
@@ -107,9 +121,8 @@ fig = px.line(comparison_data, x="date_id", y=["price_usd_scaled", "net_sentimen
               title="Bitcoin Price vs. Sentiment (Normalized)", labels={"date_id": "Date"})
 st.plotly_chart(fig, use_container_width=True)
 
-# News Source Bias Table
-st.subheader("📊 News Source Bias Analysis")
-st.write("This table ranks news sources by their sentiment scores.")
-st.dataframe(news_bias_data)
+# News Articles Table Filtered by Selected Source
+st.subheader(f"📰 Crypto News Articles from {selected_source}")
+st.dataframe(news_articles[["date_id", "source_id", "title", "description", "content", "sentiment"]])
 
 st.success("Dashboard Updated with Latest Data! ✅")
