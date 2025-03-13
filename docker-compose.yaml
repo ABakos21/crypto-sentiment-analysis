@@ -51,6 +51,7 @@ services:
       - ./logs:/opt/airflow/logs
       - airflow_plugins:/opt/airflow/plugins
       - ./docker/airflow-gcs-key.json:/opt/airflow/gcp-service-key.json
+      - ./dbt:/opt/dbt
     networks:
       - airflow_network
 
@@ -83,6 +84,7 @@ services:
       - ./logs:/opt/airflow/logs
       - airflow_plugins:/opt/airflow/plugins
       - ./docker/airflow-gcs-key.json:/opt/airflow/gcp-service-key.json
+      - ./dbt:/opt/dbt
     ports:
       - "8080:8080"
     healthcheck:
