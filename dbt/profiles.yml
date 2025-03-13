@@ -4,7 +4,9 @@ crypto_dbt:
       type: bigquery
       method: service-account
       project: mimetic-parity-452009-b1
-      dataset: crypto_data_gold
+      dataset: dev
       threads: 4
-      keyfile: /opt/airflow/gcp-service-key.json
+      location: eu
+      #keyfile: /opt/airflow/gcp-service-key.json
+      keyfile: /home/andrew/code/ABakos21/crypto-sentiment-analysis/docker/airflow-gcs-key.json
   target: dev
