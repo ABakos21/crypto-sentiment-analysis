@@ -42,6 +42,8 @@ RUN mkdir -p /opt/dbt /opt/airflow/logs /opt/airflow/dags /opt/airflow/plugins \
 
 # Copy dbt configuration and models
 COPY --chown=airflow:airflow dbt/ /opt/dbt/
+COPY --chown=airflow:airflow dbt/dbt_project.yml /opt/dbt/dbt_project.yml
+
 
 # Copy DAGs
 COPY --chown=airflow:airflow dags/ /opt/airflow/dags/

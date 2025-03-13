@@ -1,8 +1,3 @@
-{{ config(
-    materialized='table',
-    schema='crypto_data_gold'
-) }}
-
 WITH date_series AS (
     SELECT
         DATE('2025-01-01') + INTERVAL n DAY AS full_date
@@ -15,7 +10,7 @@ SELECT
     EXTRACT(YEAR FROM full_date) AS year,
     EXTRACT(MONTH FROM full_date) AS month,
     EXTRACT(DAY FROM full_date) AS day,
-    EXTRACT(DAYOFWEEK FROM full_date) AS day_of_week,  -- 1=Sunday, 7=Saturday
+    EXTRACT(DAYOFWEEK FROM full_date) AS day_of_week,
     CASE
         WHEN EXTRACT(DAYOFWEEK FROM full_date) IN (1,7) THEN TRUE
         ELSE FALSE
