@@ -1,8 +1,3 @@
-{{ config(
-    materialized='table',
-    schema='crypto_data_gold'
-) }}
-
 WITH coin_metadata AS (
     SELECT DISTINCT
         coin AS coin_id,          -- Primary Key
