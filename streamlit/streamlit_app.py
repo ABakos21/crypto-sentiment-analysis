@@ -4,6 +4,7 @@ import pandas as pd
 import plotly.express as px
 from google.cloud import bigquery
 from google.oauth2 import service_account
+import json
 
 #for deployment
 gcp_credentials = json.loads(st.secrets["GOOGLE_CLOUD_CREDENTIALS"])
