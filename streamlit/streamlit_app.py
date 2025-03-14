@@ -8,9 +8,11 @@ import json
 
 #for deployment
 gcp_credentials = json.loads(st.secrets["GOOGLE_CLOUD_CREDENTIALS"])
-credentials = service_account.Credentials.from_service_account_info(gcp_credentials)
 
-# Initialize BigQuery client with credentials
+gcp_credentials["private_key"] = gcp_credentials["private_key"].replace("\\n", "\n")
+
+# Authenticate with Google Cloud
+credentials = service_account.Credentials.from_service_account_info(gcp_credentials)
 client = bigquery.Client(credentials=credentials, project=gcp_credentials["project_id"])
 
 # Set Google Credentials
