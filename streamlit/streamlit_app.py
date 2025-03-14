@@ -3,12 +3,20 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from google.cloud import bigquery
+from google.oauth2 import service_account
+
+#for deployment
+gcp_credentials = json.loads(st.secrets["GOOGLE_CLOUD_CREDENTIALS"])
+credentials = service_account.Credentials.from_service_account_info(gcp_credentials)
+
+# Initialize BigQuery client with credentials
+client = bigquery.Client(credentials=credentials, project=gcp_credentials["project_id"])
 
 # Set Google Credentials
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/andrew/code/ABakos21/crypto-sentiment-analysis/docker/airflow-gcs-key.json"
+#os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/andrew/code/ABakos21/crypto-sentiment-analysis/docker/airflow-gcs-key.json"
 
 # Initialize BigQuery Client
-client = bigquery.Client()
+#client = bigquery.Client()
 
 # Project & Dataset
 PROJECT_ID = "mimetic-parity-452009-b1"
