@@ -194,6 +194,7 @@ parsedatetime==2.6 ; python_version >= "3.10" and python_version < "3.13"
 pathspec==0.12.1 ; python_version >= "3.10" and python_version < "3.13"
 pendulum==3.0.0 ; python_version >= "3.10" and python_version < "3.13"
 pillow==11.1.0 ; python_version >= "3.10" and python_version < "3.13"
+plotly==6.0.0
 pluggy==1.5.0 ; python_version >= "3.10" and python_version < "3.13"
 prison==0.2.1 ; python_version >= "3.10" and python_version < "3.13"
 propcache==0.3.0 ; python_version >= "3.10" and python_version < "3.13"
